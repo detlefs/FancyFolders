@@ -1,11 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+
+# SPECPATH is injected by PyInstaller: the directory containing this spec file.
+ROOT = os.path.abspath(SPECPATH)
 
 a = Analysis(
-    ['fancyfolders/main.py'],
-    pathex=['.'],
+    [os.path.join(ROOT, 'fancyfolders', 'main.py')],
+    pathex=[ROOT],
     binaries=[],
-    datas=[("assets", "assets")],
+    datas=[(os.path.join(ROOT, "assets"), "assets")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -28,7 +32,8 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch='arm64',
+    # Override with e.g. TARGET_ARCH=universal2 or x86_64 before running pyinstaller.
+    target_arch=os.environ.get('TARGET_ARCH', 'arm64'),
     codesign_identity=None,
     entitlements_file=None,
 )
@@ -45,7 +50,7 @@ app = BUNDLE(
     coll,
     name='Fancy Folders.app',
     version='2.0',
-    icon="assets/app_icon.icns",
+    icon=os.path.join(ROOT, "assets", "app_icon.icns"),
     bundle_identifier="ca.kfreitag.fancyfolders",
 )
 
