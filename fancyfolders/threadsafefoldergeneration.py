@@ -44,8 +44,6 @@ class FolderGeneratorWorker(QRunnable):
                                         self.folder_style)
         except TaskExitedException:
             pass
-        except Exception:
-            raise ValueError("Folder generation had an unexpected error")
 
     @Slot()
     def stop(self):
