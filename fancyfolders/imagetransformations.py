@@ -74,7 +74,7 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.big_sur_light,
 
     # -------------------------------------------------------------------------
     # Bounding box to place icon
-    bounding_box_percentages = (0.086, 0.29, 0.914, 0.777)
+    bounding_box_percentages = folder_style.icon_box_percentages()
     bounding_box = cast(
         tuple[int, int, int, int],
         tuple(int(size * percent) for percent in bounding_box_percentages))
