@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['fancyfolders/main.py'],
-    pathex=[],
+    pathex=['.'],
     binaries=[],
     datas=[("assets", "assets")],
     hiddenimports=[],
@@ -28,7 +28,7 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch='arm64',
     codesign_identity=None,
     entitlements_file=None,
 )
