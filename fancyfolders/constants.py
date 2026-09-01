@@ -45,6 +45,7 @@ class FolderStyle(Enum):
     big_sur_light = 0
     big_sur_dark = 1
     catalina = 2
+    tahoe = 3
 
     def filename(self):
         """Filename of the icon in the assets folder
@@ -54,7 +55,8 @@ class FolderStyle(Enum):
         return {
             FolderStyle.big_sur_light: "big_sur_light.png",
             FolderStyle.big_sur_dark: "big_sur_dark.png",
-            FolderStyle.catalina: "catalina.png"
+            FolderStyle.catalina: "catalina.png",
+            FolderStyle.tahoe: "tahoe.png",
         }[self]
 
     def display_name(self):
@@ -66,6 +68,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: "macOS Big Sur - Light mode",
             FolderStyle.big_sur_dark: "macOS Big Sur - Dark mode",
             FolderStyle.catalina: "macOS Catalina",
+            FolderStyle.tahoe: "macOS Tahoe",
         }[self]
 
     def size(self) -> int:
@@ -77,6 +80,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: 1024,
             FolderStyle.big_sur_dark: 1024,
             FolderStyle.catalina: 1024,
+            FolderStyle.tahoe: 1024,
         }[self]
 
     def icon_box_percentages(self) -> tuple[float, float, float, float]:
@@ -89,6 +93,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: (0.086, 0.29, 0.914, 0.777),
             FolderStyle.big_sur_dark: (0.086, 0.29, 0.914, 0.777),
             FolderStyle.catalina: (0.0668, 0.281, 0.9332, 0.770),
+            FolderStyle.tahoe: (0.0668, 0.281, 0.9332, 0.770),
         }[self]
 
     def preview_crop_percentages(self) -> tuple[float, float, float, float]:
@@ -101,6 +106,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: (0, 0.0888, 1.0, 0.9276),
             FolderStyle.big_sur_dark: (0, 0.0888, 1.0, 0.9276),
             FolderStyle.catalina: (0, 0.0972, 1.0, 0.896),
+            FolderStyle.tahoe: (0, 0.0972, 1.0, 0.896),
         }[self]
 
     def base_colour(self) -> tuple[int, int, int]:
@@ -112,6 +118,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: (116, 208, 251),
             FolderStyle.big_sur_dark: (96, 208, 255),
             FolderStyle.catalina: (120, 210, 251),
+            FolderStyle.tahoe: (120, 210, 251),
         }[self]
 
     def icon_colour(self) -> tuple[int, int, int]:
@@ -123,6 +130,7 @@ class FolderStyle(Enum):
             FolderStyle.big_sur_light: (63, 170, 229),
             FolderStyle.big_sur_dark: (53, 160, 225),
             FolderStyle.catalina: (63, 170, 229),  # TODO set properly
+            FolderStyle.tahoe: (63, 170, 229),  # TODO set properly
         }[self]
 
 
