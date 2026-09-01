@@ -5,6 +5,10 @@
   <h1>Fancy Folders</h1>
 </div>
 
+> [!IMPORTANT]
+> This fork of Fancy Folders is currently being changed and updated. Currently it's not usable. Please continue using the original!
+> As soon as my changes are ready, I'll publish them here in master branch.
+
 **Fancy Folders** is a macOS application for creating customized folder icons from SF symbols, text, or images.
 
 - Drag and drop to set the icon and output folder
