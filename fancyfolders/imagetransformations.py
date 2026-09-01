@@ -17,6 +17,7 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
                          generation_method: IconGenerationMethod = IconGenerationMethod.NONE,
                          icon_scale=1.0, tint_colour: tuple[int, int, int] = None,
                          text: str = None, font_style=SFFont.heavy, image: Image.Image = None,
+                         preserve_image_colours: bool = False,
                          keep_going: Callable[[], bool] = lambda: True) -> Image.Image:
     """Generates a folder icon image based on the given parameters.
 
@@ -34,6 +35,8 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     :param text: Text or symbol to use as the icon
     :param font_style:
     :param image: Dragged image to use as the icon
+    :param preserve_image_colours: Composite the dragged image in its original
+        colours on top of the folder instead of engraving it as a mask
     :param keep_going:
     :return: The PIL Image
     :raises TaskExitedException: The worker is requesting to cancel this method.
@@ -60,17 +63,11 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     exit_check()
 
     # -------------------------------------------------------------------------
-    # Generate mask image based on icon generation method
-    mask_image = None
+    # Nothing to draw on top of the folder
     if generation_method is IconGenerationMethod.NONE:
         if tint_colour is None:
             return folder_image
         return adjusted_colours(folder_image, folder_style.base_colour(), tint_colour)
-    elif generation_method is IconGenerationMethod.IMAGE:
-        mask_image = _generate_mask_from_image(image)
-    elif generation_method is IconGenerationMethod.TEXT:
-        mask_image = _generate_mask_from_text(text, size, font_style)
-    exit_check()
 
     # -------------------------------------------------------------------------
     # Bounding box to place icon
@@ -80,6 +77,27 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
         tuple(int(size * percent) for percent in bounding_box_percentages))
     new_bounding_box = scaled_box(
         bounding_box, icon_scale * ICON_BOX_SCALING_FACTOR, (size, size))
+    exit_check()
+
+    # -------------------------------------------------------------------------
+    # Paste the image in its original colours instead of engraving it
+    if generation_method is IconGenerationMethod.IMAGE and preserve_image_colours:
+        if tint_colour is not None:
+            folder_image = adjusted_colours(
+                folder_image, folder_style.base_colour(), tint_colour)
+        exit_check()
+
+        scaled_image, paste_box = _resize_image_in_box(
+            image.convert("RGBA"), new_bounding_box)
+        folder_image.alpha_composite(scaled_image, paste_box[0:2])
+        return folder_image
+
+    # -------------------------------------------------------------------------
+    # Generate mask image based on icon generation method
+    if generation_method is IconGenerationMethod.IMAGE:
+        mask_image = _generate_mask_from_image(image)
+    else:
+        mask_image = _generate_mask_from_text(text, size, font_style)
     exit_check()
 
     # -------------------------------------------------------------------------

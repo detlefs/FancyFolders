@@ -2,7 +2,7 @@ from typing import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFontDatabase
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit
 
 from fancyfolders.constants import PANEL1_COLOUR, SFFont
 from fancyfolders.ui.components.customlabel import CustomLabel
@@ -15,10 +15,13 @@ class SetIconTextPanel(InstructionPanel):
     icon text
     """
 
-    def __init__(self, on_change: Callable[[], None]) -> None:
+    def __init__(self, on_change: Callable[[], None],
+                 on_colour_mode_change: Callable[[], None]) -> None:
         """Constructs a new text instruction panel
 
         :param on_change: Callback to run whenever the text is edited
+        :param on_colour_mode_change: Callback to run whenever the original
+            colours checkbox is toggled
         """
         super().__init__(1, PANEL1_COLOUR,
                          "Set folder icon",
@@ -48,8 +51,18 @@ class SetIconTextPanel(InstructionPanel):
         container.addSpacing(5)
         container.addWidget(self.icon_text_input)
 
+        # Keep the dragged image in its own colours instead of engraving it
+        self.original_colours_checkbox = QCheckBox("Keep original image colours")
+        self.original_colours_checkbox.toggled.connect(
+            lambda _: on_colour_mode_change())
+
+        checkbox_container = QHBoxLayout()
+        checkbox_container.addWidget(self.original_colours_checkbox)
+        checkbox_container.addStretch()
+
         # Add main container to instruction panel
         self.addLayout(container)
+        self.addLayout(checkbox_container)
 
     def get_icon_text(self) -> str:
         return self.icon_text_input.text()
@@ -58,5 +71,9 @@ class SetIconTextPanel(InstructionPanel):
         self.icon_text_input.setText(text)
         self.on_change()
 
+    def keep_original_image_colours(self) -> bool:
+        return self.original_colours_checkbox.isChecked()
+
     def reset(self) -> None:
         self.icon_text_input.setText("")
+        self.original_colours_checkbox.setChecked(False)

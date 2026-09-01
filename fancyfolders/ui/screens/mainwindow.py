@@ -71,7 +71,8 @@ class MainWindow(QMainWindow):
         # Main controls panels
         self.set_icon_panel = SetIconTextPanel(
             lambda: self.update_folder_generation_variables(
-                True, IconGenerationMethod.TEXT))
+                True, IconGenerationMethod.TEXT),
+            lambda: self.update_folder_generation_variables(True))
         main_layout.addWidget(self.set_icon_panel)
         self.set_location_panel = SetLocationPanel()
         main_layout.addWidget(self.set_location_panel)
@@ -126,6 +127,7 @@ class MainWindow(QMainWindow):
         icon_scale = self.scale_thickness_sliders.get_scale()
         icon_thickness = self.scale_thickness_sliders.get_thickness()
         icon_text = self.set_icon_panel.get_icon_text()
+        keep_original_colours = self.set_icon_panel.keep_original_image_colours()
 
         # Check that there is text if in TEXT mode, otherwise set to NONE mode
         if self.generation_method is IconGenerationMethod.TEXT and not icon_text:
@@ -142,7 +144,8 @@ class MainWindow(QMainWindow):
                 task_uuid, folder_style=folder_style,
                 generation_method=self.generation_method, icon_scale=icon_scale,
                 tint_colour=tint_colour, text=icon_text, font_style=icon_thickness,
-                image=self.icon_image)
+                image=self.icon_image,
+                preserve_image_colours=keep_original_colours)
 
             # Connect completion callback to the centreImage object, and set it to
             # receive the result of this task using its unique ID

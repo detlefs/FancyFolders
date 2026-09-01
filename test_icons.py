@@ -3,6 +3,8 @@
 import os
 import tempfile
 
+from PIL import Image
+
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
 from fancyfolders.imagetransformations import generate_folder_icon
 
@@ -36,6 +38,20 @@ def main():
                       f"icon box ignored: {style}")
         finally:
             FolderStyle.icon_box_percentages = original
+        # Original colours are kept verbatim when requested, engraved otherwise
+        red = Image.new("RGBA", (200, 200), (255, 0, 0, 255))
+        kept = generate_folder_icon(
+            folder_style=FolderStyle.tahoe,
+            generation_method=IconGenerationMethod.IMAGE, image=red,
+            preserve_image_colours=True)
+        centre = (512, 538)  # inside the icon bounding box
+        check(kept.getpixel(centre) == (255, 0, 0, 255), "original colours not kept")
+
+        engraved = generate_folder_icon(
+            folder_style=FolderStyle.tahoe,
+            generation_method=IconGenerationMethod.IMAGE, image=red)
+        check(engraved.getpixel(centre) != (255, 0, 0, 255),
+              "engraved icon should not contain the original colour")
     finally:
         os.chdir(cwd)
 
