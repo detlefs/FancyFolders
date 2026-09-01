@@ -24,7 +24,8 @@ class ContainerRadioButton(QWidget):
         self.radio = QRadioButton(parent)
         self.radio.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.radio.setChecked(is_default)
-        self.radio.clicked.connect(lambda _: on_change())
+        if on_change is not None:
+            self.radio.clicked.connect(lambda _: on_change())
         group.addButton(self.radio)
 
         container = QHBoxLayout()
