@@ -6,7 +6,8 @@
 </div>
 
 > [!IMPORTANT]
-> This fork of Fancy Folders is currently being changed and updated. Currently it's not usable. Please continue using the original!
+> This fork of Fancy Folders is currently being changed and updated. Currently it's not usable. Please continue using the [original](https://github.com/kfreitag1/FancyFolders)!
+> 
 > As soon as my changes are ready, I'll publish them here in master branch.
 
 **Fancy Folders** is a macOS application for creating customized folder icons from SF symbols, text, or images.
