@@ -1,7 +1,7 @@
 import math
 
-from PySide6.QtCore import QPoint, QRect, QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPaintEvent, QPainter, QPen
+from PySide6.QtCore import QPoint, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QBrush, QColor, QFont, QPaintEvent, QPainter, QPalette, QPen
 from PySide6.QtWidgets import QLayout, QVBoxLayout, QWidget
 
 from fancyfolders.ui.components.customlabel import CustomLabel
@@ -12,8 +12,9 @@ class InstructionPanel(QWidget):
     index number
     """
 
-    CIRCLE_RADIUS = 14
-    SPACING = 4
+    CIRCLE_RADIUS = 11
+    CORNER_RADIUS = 10
+    SPACING = 6
 
     def __init__(self, index: int, colour: tuple[int, int, int],
                  title: str = None, extra_spacing=False) -> None:
@@ -21,7 +22,7 @@ class InstructionPanel(QWidget):
         and layout object containing children elements to hold within the panel
 
         :param index: Number to show in circle on the left
-        :param colour: Colour of the panel (r, g, b)
+        :param colour: Accent colour of the step badge (r, g, b)
         :param title: Optional title of the panel
         :param extra_spacing: Should there be extra spacing on bottom?
         """
@@ -36,7 +37,7 @@ class InstructionPanel(QWidget):
             self.SPACING * 2,
             math.floor(self.SPACING * 1.5),
             self.SPACING * 2,
-            math.floor(self.SPACING * (1.8 if extra_spacing else 1)))
+            math.floor(self.SPACING * (1.8 if extra_spacing else 1.5)))
         self.wrap_layout.setSpacing(0)
 
         if title is not None:
@@ -56,8 +57,8 @@ class InstructionPanel(QWidget):
         self.wrap_layout.addLayout(layout)
 
     def paintEvent(self, _: QPaintEvent) -> None:
-        """Override paint event to draw a custom background for the
-        instruction panel
+        """Override paint event to draw the panel as a grouped content box
+        with a coloured step badge on its left edge
 
         :param _: Unused paint event object
         """
@@ -69,29 +70,32 @@ class InstructionPanel(QWidget):
         circle_bounds = QRect(QPoint(2, math.floor(height / 2) - self.CIRCLE_RADIUS),
                               QSize(self.CIRCLE_RADIUS * 2, self.CIRCLE_RADIUS * 2))
 
+        palette = self.palette()
+        # Hairline separator, subtle in both light and dark appearance
+        border_colour = QColor(palette.color(QPalette.Text))
+        border_colour.setAlpha(30)
+
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
 
-            # Outline and fill pens are the same colour to blend into each other
-            outline_pen = QPen(QColor.fromRgb(*self.colour), 3, Qt.SolidLine,
-                               Qt.RoundCap, Qt.RoundJoin)
-            brush = QBrush(QColor.fromRgb(*self.colour), Qt.SolidPattern)
+            # Grouped content box, one hairline inset to keep the stroke crisp
+            painter.setBrush(QBrush(palette.color(QPalette.Base), Qt.SolidPattern))
+            painter.setPen(QPen(border_colour, 1))
+            painter.drawRoundedRect(
+                QRectF(inset_rect).adjusted(0.5, 0.5, -0.5, -0.5),
+                self.CORNER_RADIUS, self.CORNER_RADIUS)
 
-            # Solid background colour
-            painter.setBrush(brush)
+            # Filled accent badge on the left edge of the box
             painter.setPen(QPen(Qt.NoPen))
-            painter.drawRoundedRect(inset_rect, 5, 5)
-
-            # Circle with white center on left side of box (in center vertically)
-            painter.setPen(outline_pen)
-            painter.setBrush(QBrush(Qt.white, Qt.SolidPattern))
+            painter.setBrush(QBrush(QColor.fromRgb(*self.colour), Qt.SolidPattern))
             painter.drawEllipse(circle_bounds)
 
-            # Index number in the center of the circle, same colour
+            # Index number in the center of the badge
             font = QFont()
             font.setStyleHint(QFont.SansSerif)
             font.setBold(True)
-            font.setPointSize(math.floor(self.CIRCLE_RADIUS * 1.2))
+            font.setPointSize(math.floor(self.CIRCLE_RADIUS * 1.1))
             painter.setFont(font)
+            painter.setPen(QPen(Qt.white))
             painter.drawText(circle_bounds, Qt.AlignHCenter |
                              Qt.AlignVCenter, str(self.index))

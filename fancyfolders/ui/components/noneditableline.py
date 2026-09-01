@@ -11,9 +11,7 @@ class NonEditableLine(QLabel):
     placeholder text.
     """
 
-    BACKGROUND_COLOUR = QColor.fromRgb(255, 255, 255)
-    PLACEHOLDER_COLOUR = QColor.fromRgb(200, 200, 200)
-    TEXT_COLOUR = QColor.fromRgb(0, 0, 0)
+    BACKGROUND_ALPHA = 20
 
     def __init__(self, placeholder_text: str) -> None:
         """Constructs a new non-editable text field
@@ -40,10 +38,9 @@ class NonEditableLine(QLabel):
         """
         super().setText(text if text is not None else self.placeholderText)
 
-        if text is None:
-            self._set_text_colour(self.PLACEHOLDER_COLOUR)
-        else:
-            self._set_text_colour(self.TEXT_COLOUR)
+        palette = self.palette()
+        self._set_text_colour(palette.color(
+            QPalette.PlaceholderText if text is None else QPalette.Text))
 
     def _set_text_colour(self, colour: QColor) -> None:
         """Convenience method to set the colour of the displayed text
@@ -68,8 +65,11 @@ class NonEditableLine(QLabel):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
 
-            # Solid background rounded rectangle
-            brush = QBrush(self.BACKGROUND_COLOUR, Qt.SolidPattern)
+            # Subtle fill that works on both light and dark backgrounds
+            background_colour = QColor(self.palette().color(QPalette.Text))
+            background_colour.setAlpha(self.BACKGROUND_ALPHA)
+
+            brush = QBrush(background_colour, Qt.SolidPattern)
             painter.setBrush(brush)
             painter.setPen(QPen(Qt.NoPen))
             painter.drawRoundedRect(max_rect, corner_radius, corner_radius)

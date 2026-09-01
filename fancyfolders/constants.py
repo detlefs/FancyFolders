@@ -10,9 +10,10 @@ VERSION = "2.0"
 
 # UI
 
-PANEL1_COLOUR = (94, 129, 166)
-PANEL2_COLOUR = (52, 159, 192)
-PANEL3_COLOUR = (42, 169, 173)
+# Accent colours of the numbered step badges (macOS system colours)
+PANEL1_COLOUR = (0, 122, 255)    # systemBlue
+PANEL2_COLOUR = (48, 176, 199)   # systemTeal
+PANEL3_COLOUR = (52, 199, 89)    # systemGreen
 
 ICON_SCALE_SLIDER_MAX = 31
 MAXIMUM_ICON_SCALE_VALUE = 2.0
