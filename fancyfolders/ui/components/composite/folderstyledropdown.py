@@ -21,14 +21,14 @@ class FolderStyleDropdown(QComboBox):
         # All possible folder styles
         self.addItems([style.display_name() for style in FolderStyle])
 
+        # Set default before connecting so no callback fires during setup
+        self.reset()
+
         # Setup callback on change
         self.currentIndexChanged.connect(lambda _: on_change())
-
-        # Set default
-        self.reset()
 
     def get_folder_style(self) -> FolderStyle:
         return FolderStyle(self.currentIndex())
 
     def reset(self) -> None:
-        self.setCurrentIndex(FolderStyle.big_sur_light.value)
+        self.setCurrentIndex(FolderStyle.tahoe.value)
