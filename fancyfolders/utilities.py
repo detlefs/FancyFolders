@@ -5,7 +5,7 @@ import sys
 from typing import cast
 
 import Cocoa
-from PIL.Image import Image
+from PIL.Image import Image, Resampling
 
 
 #######################
@@ -73,6 +73,39 @@ def internal_resource_path(relative_path: str) -> str:
     return os.path.join(base_path, relative_path)
 
 
+# Sizes macOS keeps in an icon family. Providing all of them avoids Finder
+# having to downscale the single large icon for list and column views
+ICON_SIZES = (16, 32, 128, 256, 512, 1024)
+
+
+def _icon_family_image(pil_image: Image) -> "Cocoa.NSImage":
+    """Builds an NSImage containing one representation per macOS icon size
+
+    :param pil_image: PIL Image of the folder icon
+    :return: NSImage with one bitmap representation per icon size
+    :raises OSError: If the image data cannot be read
+    """
+    largest = max(ICON_SIZES)
+    ns_image = Cocoa.NSImage.alloc().initWithSize_(
+        Cocoa.NSMakeSize(largest, largest))
+
+    for size in ICON_SIZES:
+        # Need to hand the API PNG data, so render each size to a byte buffer
+        buffered = BytesIO()
+        pil_image.resize((size, size), Resampling.LANCZOS).save(
+            buffered, format="PNG")
+
+        representation = Cocoa.NSBitmapImageRep.imageRepWithData_(
+            buffered.getvalue())
+        if representation is None:
+            raise OSError(
+                "Could not read the generated folder icon image data")
+        representation.setSize_(Cocoa.NSMakeSize(size, size))
+        ns_image.addRepresentation_(representation)
+
+    return ns_image
+
+
 def set_folder_icon(pil_image: Image, path: str) -> None:
     """Sets the icon of the file/directory at the specified path to the
     provided image using the native macOS API, interfaced through PyObjC
@@ -82,14 +115,7 @@ def set_folder_icon(pil_image: Image, path: str) -> None:
     :raises OSError: If the image data cannot be read or macOS refuses to
         write the icon (missing permissions, read-only volume, ...)
     """
-    # Need to first save the image data to a bytes buffer in PNG format
-    # for the PyObjC API method
-    buffered = BytesIO()
-    pil_image.save(buffered, format="PNG")
-
-    ns_image = Cocoa.NSImage.alloc().initWithData_(buffered.getvalue())
-    if ns_image is None:
-        raise OSError("Could not read the generated folder icon image data")
+    ns_image = _icon_family_image(pil_image)
 
     if not Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(
             ns_image, path, 0):

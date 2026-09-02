@@ -7,7 +7,7 @@ from PIL import Image
 
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
 from fancyfolders.imagetransformations import generate_folder_icon
-from fancyfolders.utilities import set_folder_icon
+from fancyfolders.utilities import ICON_SIZES, _icon_family_image, set_folder_icon
 
 
 def generate(style):
@@ -60,6 +60,8 @@ def main():
     folder = tempfile.mkdtemp()
     set_folder_icon(red, folder)
     check("Icon\r" in os.listdir(folder), "custom icon file was not written")
+    sizes = [rep.pixelsWide() for rep in _icon_family_image(red).representations()]
+    check(sorted(sizes) == sorted(ICON_SIZES), f"missing icon sizes: {sizes}")
     try:
         set_folder_icon(red, os.path.join(folder, "does not exist"))
         check(False, "setting the icon of a missing folder should raise")
