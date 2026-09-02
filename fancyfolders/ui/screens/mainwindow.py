@@ -246,6 +246,7 @@ class MainWindow(QMainWindow):
         # Dragged data is an image
         if data.hasFormat("application/x-qt-image"):
             self.icon_image = fromqimage(data.imageData())
+            self.set_icon_panel.clear_icon_text()
             self.update_folder_generation_variables(
                 True, IconGenerationMethod.IMAGE)
             event.accept()
@@ -267,6 +268,7 @@ class MainWindow(QMainWindow):
                 elif os.path.isfile(path):
                     try:
                         self.icon_image = open(path)
+                        self.set_icon_panel.clear_icon_text()
                         self.update_folder_generation_variables(
                             True, IconGenerationMethod.IMAGE)
                         event.accept()
@@ -288,6 +290,7 @@ class MainWindow(QMainWindow):
                                    else black_silhouette(symbol_image))
                 self.set_icon_panel.set_keep_original_image_colours(
                     keep_colours)
+                self.set_icon_panel.clear_icon_text()
                 self.update_folder_generation_variables(
                     True, IconGenerationMethod.IMAGE)
             event.accept()

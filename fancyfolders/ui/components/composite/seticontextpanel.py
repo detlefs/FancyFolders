@@ -72,6 +72,14 @@ class SetIconTextPanel(InstructionPanel):
         self.icon_text_input.setText(text)
         self.on_change()
 
+    def clear_icon_text(self) -> None:
+        """Empties the text field without regenerating the icon, the caller
+        updates the folder icon itself
+        """
+        self.icon_text_input.blockSignals(True)
+        self.icon_text_input.setText("")
+        self.icon_text_input.blockSignals(False)
+
     def keep_original_image_colours(self) -> bool:
         return self.original_colours_checkbox.isChecked()
 
