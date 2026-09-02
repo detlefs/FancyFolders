@@ -39,12 +39,23 @@ _**Note:** Please follow the first launch instructions in order to use the app. 
   - From an image (eg. from Google images)
   - From an image file (eg .jpg or .png file)
   - Type in text in the input field
+  - Type or paste emoji, drawn in their own colours
+
+- Dropped SF Symbols are taken as vector art, so they always match the
+  rendering mode set in the SF Symbols app, including multicolour, and work
+  with symbols of any SF Symbols version
+
+- Tick "Keep original image colours" to place an image on top of the folder
+  instead of engraving it into it
 
 - Drag to set the output folder
 
 - Choose a folder tint colour from the list or select a custom colour
 
 - Click "Save Icon" to save the folder to the output folder, or to make a new folder with the icon in the chosen directory
+
+  - Icons are written in every macOS icon size, so they stay sharp down to the
+    16px list view
 
 ## Licence
 
