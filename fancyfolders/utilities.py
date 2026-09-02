@@ -117,9 +117,13 @@ def set_folder_icon(pil_image: Image, path: str) -> None:
     """
     ns_image = _icon_family_image(pil_image)
 
-    if not Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(
-            ns_image, path, 0):
+    workspace = Cocoa.NSWorkspace.sharedWorkspace()
+    if not workspace.setIcon_forFile_options_(ns_image, path, 0):
         raise OSError("macOS refused to set the icon of '{}'".format(path))
+
+    # Finder normally picks the new icon up through the filesystem change,
+    # but already open windows and the icon cache can keep showing the old one
+    workspace.noteFileSystemChanged_(path)
 
 
 def generate_unique_folder_filename(directory: str) -> str:
