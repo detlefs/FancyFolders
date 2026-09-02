@@ -47,7 +47,8 @@ class SetIconTextPanel(InstructionPanel):
 
         container = QHBoxLayout()
         container.addWidget(CustomLabel(
-            "Drag symbol / image above, or type text:", is_bold=False))
+            "Drag SF Symbol / image above, or type text or emoji(s):",
+            is_bold=False))
         container.addSpacing(5)
         container.addWidget(self.icon_text_input)
 
