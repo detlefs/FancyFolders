@@ -2,10 +2,14 @@ from colorsys import hsv_to_rgb, rgb_to_hsv
 from io import BytesIO
 import os
 import sys
-from typing import cast
+from typing import Optional, cast
 
 import Cocoa
 from PIL.Image import Image, Resampling
+from PIL.ImageQt import fromqimage
+from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtGui import QImage, QPainter
+from PySide6.QtSvg import QSvgRenderer
 
 
 #######################
@@ -145,6 +149,99 @@ def generate_unique_folder_filename(directory: str) -> str:
             break
         index += 1
     return path
+
+#######################
+# SF SYMBOL UTILITIES
+#######################
+
+# SF Symbols glyphs live in the plane 16 private use area
+SYMBOL_CHARACTER_RANGE = (0x100000, 0x10FFFD)
+
+# Symbols are drawn at the size of the largest folder icon
+SYMBOL_RENDER_SIZE = 1024
+
+
+def is_symbol_character(text: str) -> bool:
+    """Whether the text is a single SF Symbols character
+
+    :param text: Text to check
+    :return: Is it a symbol character?
+    """
+    if len(text) != 1:
+        return False
+    low, high = SYMBOL_CHARACTER_RANGE
+    return low <= ord(text) <= high
+
+
+def dragged_symbol_svg() -> Optional[bytes]:
+    """Reads the SVG that macOS puts on the drag pasteboard for a dragged SF
+    Symbol. Qt filters that flavour out of the drop event, so it has to be
+    read through the native API instead
+
+    :return: SVG data, or None if the drag carried no SVG
+    """
+    pasteboard = Cocoa.NSPasteboard.pasteboardWithName_(
+        Cocoa.NSPasteboardNameDrag)
+    data = pasteboard.dataForType_("public.svg-image")
+    if data is None:
+        return None
+    return bytes(data)
+
+
+def render_svg(svg: bytes, size: int = SYMBOL_RENDER_SIZE) -> Optional[Image]:
+    """Rasterizes SVG data, cropped to the drawing it contains
+
+    :param svg: SVG data
+    :param size: Size of the longest side in pixels
+    :return: PIL Image (RGBA), or None if the data is not valid SVG
+    """
+    renderer = QSvgRenderer(QByteArray(svg))
+    if not renderer.isValid():
+        return None
+
+    default_size = renderer.defaultSize()
+    scale = size / max(default_size.width(), default_size.height())
+    image = QImage(round(default_size.width() * scale),
+                   round(default_size.height() * scale),
+                   QImage.Format_RGBA8888)
+    image.fill(Qt.transparent)
+
+    painter = QPainter(image)
+    renderer.render(painter)
+    painter.end()
+
+    drawing = fromqimage(image).convert("RGBA")
+    ink_box = drawing.getbbox()
+    if ink_box is None:
+        return None
+    return drawing.crop(ink_box)
+
+
+def black_silhouette(image: Image) -> Image:
+    """Recolours an image to black, keeping its shape. A monochrome symbol can
+    be drawn in any colour, white included, but engraving it into the folder
+    uses the brightness of the image, so only its silhouette may survive
+
+    :param image: PIL Image (RGBA)
+    :return: PIL Image (RGBA), black on transparent
+    """
+    silhouette = image.convert("RGBA")
+    shape = silhouette.getchannel("A")
+    silhouette.paste((0, 0, 0, 255), (0, 0) + silhouette.size)
+    silhouette.putalpha(shape)
+    return silhouette
+
+
+def is_greyscale(image: Image) -> bool:
+    """Whether every visible pixel of the image is a shade of grey
+
+    :param image: PIL Image (RGBA)
+    :return: Is the image free of colour?
+    """
+    return all(red == green == blue
+               for red, green, blue, alpha in image.convert(
+                   "RGBA").get_flattened_data() if alpha > 0)
+
 
 #######################
 # MATH UTILITIES

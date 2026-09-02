@@ -7,7 +7,9 @@ from PIL import Image
 
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
 from fancyfolders.imagetransformations import generate_folder_icon, _render_colour_emoji
-from fancyfolders.utilities import ICON_SIZES, _icon_family_image, set_folder_icon
+from fancyfolders.utilities import (
+    ICON_SIZES, _icon_family_image, black_silhouette, is_greyscale,
+    is_symbol_character, render_svg, set_folder_icon)
 
 
 def generate(style):
@@ -75,6 +77,29 @@ def main():
         check(False, "setting the icon of a missing folder should raise")
     except OSError:
         pass
+
+    # Dropped SF Symbols are rendered from SVG, colour decides how they are used
+    check(is_symbol_character("\U0010255d"), "symbol character not recognized")
+    check(not is_symbol_character("A"), "a letter is not a symbol character")
+    check(not is_symbol_character("\U0010255d\U0010255d"), "only single characters")
+
+    svg = b'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10">
+        <rect width="20" height="10" opacity="0"/><rect x="5" y="2" width="10" height="6" %s/>
+        </svg>'''
+    mono = render_svg(svg % b'fill="black"')
+    check(mono.size == (512, 308), f"wrong render size or crop: {mono.size}")
+    check(is_greyscale(mono), "black symbol reported as coloured")
+    check(not is_greyscale(render_svg(svg % b'fill="#007aff"')),
+          "blue symbol reported as greyscale")
+    check(render_svg(b"not an svg") is None, "invalid svg should not render")
+
+    # Monochrome symbols come in any colour, engraving needs their silhouette
+    white = render_svg(svg % b'fill="white"')
+    silhouette = black_silhouette(white)
+    visible = [c for c in silhouette.get_flattened_data() if c[3] > 0]
+    check(len(visible) == len([c for c in white.get_flattened_data() if c[3] > 0]),
+          "silhouette lost the shape")
+    check(all(c[:3] == (0, 0, 0) for c in visible), "silhouette is not black")
 
     print("ok")
 

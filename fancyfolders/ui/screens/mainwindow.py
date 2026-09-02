@@ -19,7 +19,9 @@ from fancyfolders.ui.components.composite.scalethicknesssliders import ScaleThic
 from fancyfolders.ui.components.composite.seticontextpanel import SetIconTextPanel
 from fancyfolders.ui.components.composite.setlocationpanel import SetLocationPanel
 from fancyfolders.ui.screens.aboutpanel import AboutPanel
-from fancyfolders.utilities import generate_unique_folder_filename, set_folder_icon
+from fancyfolders.utilities import (
+    black_silhouette, dragged_symbol_svg, generate_unique_folder_filename,
+    is_greyscale, is_symbol_character, render_svg, set_folder_icon)
 
 
 class MainWindow(QMainWindow):
@@ -274,8 +276,39 @@ class MainWindow(QMainWindow):
 
         # Dragged item includes text (SF Symbol), replace icon text field
         elif data.hasFormat("text/plain"):
-            self.set_icon_panel.set_icon_text(data.text())
+            symbol_image = self._dragged_symbol_image(data.text())
+
+            if symbol_image is None:
+                self.set_icon_panel.set_icon_text(data.text())
+            else:
+                # A symbol carrying colours is pasted on top of the folder,
+                # a monochrome one is engraved like any other symbol
+                keep_colours = not is_greyscale(symbol_image)
+                self.icon_image = (symbol_image if keep_colours
+                                   else black_silhouette(symbol_image))
+                self.set_icon_panel.set_keep_original_image_colours(
+                    keep_colours)
+                self.update_folder_generation_variables(
+                    True, IconGenerationMethod.IMAGE)
             event.accept()
+
+    def _dragged_symbol_image(self, text: str) -> Optional[Image]:
+        """Renders the SVG that macOS provides for a dragged SF Symbol. Gives
+        the symbol in the colours of the SF Symbols app rendering mode, and in
+        any resolution, which the dropped symbol character cannot do
+
+        :param text: Text of the drop event
+        :return: PIL Image (RGBA) of the symbol, or None if the drop is not an
+            SF Symbol or carried no SVG
+        """
+        if not is_symbol_character(text):
+            return None
+
+        svg = dragged_symbol_svg()
+        if svg is None:
+            return None
+
+        return render_svg(svg)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clears the focus on any focussed input field when clicking anywhere

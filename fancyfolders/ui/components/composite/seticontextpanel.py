@@ -74,6 +74,16 @@ class SetIconTextPanel(InstructionPanel):
     def keep_original_image_colours(self) -> bool:
         return self.original_colours_checkbox.isChecked()
 
+    def set_keep_original_image_colours(self, keep: bool) -> None:
+        """Sets the checkbox without regenerating the icon, the caller updates
+        the folder icon itself
+
+        :param keep: Whether to keep the original colours
+        """
+        self.original_colours_checkbox.blockSignals(True)
+        self.original_colours_checkbox.setChecked(keep)
+        self.original_colours_checkbox.blockSignals(False)
+
     def reset(self) -> None:
         self.icon_text_input.setText("")
         self.original_colours_checkbox.setChecked(False)
