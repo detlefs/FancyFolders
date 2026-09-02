@@ -50,6 +50,9 @@ _**Note:** Please follow the first launch instructions in order to use the app. 
 
 - Drag to set the output folder
 
+- Choose the folder style to match your macOS version: Tahoe _(default)_,
+  Big Sur in light or dark mode, or Catalina
+
 - Choose a folder tint colour from the list or select a custom colour
 
 - Click "Save Icon" to save the folder to the output folder, or to make a new folder with the icon in the chosen directory
