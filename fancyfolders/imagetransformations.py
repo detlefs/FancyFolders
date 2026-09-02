@@ -1,6 +1,6 @@
 import math
 from colorsys import hsv_to_rgb, rgb_to_hsv
-from typing import Callable, cast
+from typing import Callable, Optional, cast
 
 from PIL import ImageFont, ImageDraw, ImageFilter, ImageChops, Image
 
@@ -82,15 +82,20 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     # -------------------------------------------------------------------------
     # Paste the image in its original colours instead of engraving it
     if generation_method is IconGenerationMethod.IMAGE and preserve_image_colours:
-        if tint_colour is not None:
-            folder_image = adjusted_colours(
-                folder_image, folder_style.base_colour(), tint_colour)
-        exit_check()
+        return _composite_original_colours(
+            folder_image, image.convert("RGBA"), new_bounding_box,
+            folder_style, tint_colour)
 
-        scaled_image, paste_box = _resize_image_in_box(
-            image.convert("RGBA"), new_bounding_box)
-        folder_image.alpha_composite(scaled_image, paste_box[0:2])
-        return folder_image
+    # -------------------------------------------------------------------------
+    # Emoji have no glyphs in the SF font and carry their own colours, so draw
+    # them from the system emoji font and paste them on top of the folder
+    if generation_method is IconGenerationMethod.TEXT:
+        emoji_image = _render_colour_emoji(text)
+        exit_check()
+        if emoji_image is not None:
+            return _composite_original_colours(
+                folder_image, emoji_image, new_bounding_box,
+                folder_style, tint_colour)
 
     # -------------------------------------------------------------------------
     # Generate mask image based on icon generation method
@@ -173,6 +178,66 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     if tint_colour is None:
         return result
     return adjusted_colours(result, folder_style.base_colour(), tint_colour)
+
+
+# The only size Apple Color Emoji exposes as a full resolution bitmap strike
+EMOJI_FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
+EMOJI_FONT_SIZE = 160
+
+
+def _composite_original_colours(
+        folder_image: Image.Image, image: Image.Image,
+        bounding_box: tuple[int, int, int, int], folder_style: FolderStyle,
+        tint_colour: Optional[tuple[int, int, int]]) -> Image.Image:
+    """Pastes an image on top of the folder in its own colours, instead of
+    engraving it into the folder
+
+    :param folder_image: PIL Image (RGBA) of the folder
+    :param image: PIL Image (RGBA) to paste
+    :param bounding_box: Box to fit the image into
+    :param folder_style: The macOS folder style
+    :param tint_colour: Tint colour to apply to the folder, or None
+    :return: PIL Image (RGBA)
+    """
+    if tint_colour is not None:
+        folder_image = adjusted_colours(
+            folder_image, folder_style.base_colour(), tint_colour)
+
+    scaled_image, paste_box = _resize_image_in_box(image, bounding_box)
+    folder_image.alpha_composite(scaled_image, paste_box[0:2])
+    return folder_image
+
+
+def _render_colour_emoji(text: str) -> Optional[Image.Image]:
+    """Draws the text with the system emoji font, keeping the emoji colours
+
+    :param text: Text or emoji to draw
+    :return: PIL Image (RGBA) of the emoji, or None if the text contains no
+        emoji the system font can draw
+    """
+    # ponytail: text mixing emoji and letters renders only its emoji, the
+    # emoji font has no glyphs for anything else. Needs per-glyph font
+    # fallback to do better, which Pillow does not offer
+    try:
+        font = ImageFont.truetype(EMOJI_FONT_PATH, EMOJI_FONT_SIZE)
+    except OSError:
+        return None
+
+    image = Image.new("RGBA", (EMOJI_FONT_SIZE * 8, EMOJI_FONT_SIZE * 3),
+                      (0, 0, 0, 0))
+    try:
+        ImageDraw.Draw(image).text(
+            (image.width / 2, image.height / 2), text, font=font, anchor="mm",
+            align="center", embedded_color=True)
+    except ValueError:
+        # Raqm cannot shape the text, e.g. a lone zero width joiner
+        return None
+
+    # Characters without an emoji glyph draw nothing at all
+    ink_box = image.getbbox()
+    if ink_box is None:
+        return None
+    return image.crop(ink_box)
 
 
 def _generate_mask_from_text(text, image_size, font_style=SFFont.heavy):

@@ -6,7 +6,7 @@ import tempfile
 from PIL import Image
 
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
-from fancyfolders.imagetransformations import generate_folder_icon
+from fancyfolders.imagetransformations import generate_folder_icon, _render_colour_emoji
 from fancyfolders.utilities import ICON_SIZES, _icon_family_image, set_folder_icon
 
 
@@ -53,6 +53,14 @@ def main():
             generation_method=IconGenerationMethod.IMAGE, image=red)
         check(engraved.getpixel(centre) != (255, 0, 0, 255),
               "engraved icon should not contain the original colour")
+        # Emoji keep their own colours, plain text is still engraved
+        check(_render_colour_emoji("A") is None, "a letter is not an emoji")
+        check(_render_colour_emoji("\U0001f419") is not None, "emoji not rendered")
+        emoji = generate_folder_icon(
+            folder_style=FolderStyle.tahoe,
+            generation_method=IconGenerationMethod.TEXT, text="\U0001f419")
+        colours = set(emoji.convert("RGB").crop((300, 400, 724, 700)).get_flattened_data())
+        check(len(colours) > 1000, f"emoji drawn without its colours: {len(colours)}")
     finally:
         os.chdir(cwd)
 
