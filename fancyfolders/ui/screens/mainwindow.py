@@ -7,7 +7,7 @@ from typing import Optional
 from PIL.Image import Image, fromqimage, open
 from PySide6.QtCore import QThreadPool, Signal
 from PySide6.QtGui import QAction, QDropEvent, QMouseEvent, Qt
-from PySide6.QtWidgets import QApplication, QLineEdit, QMainWindow, QMenuBar, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QLineEdit, QMainWindow, QMenuBar, QMessageBox, QVBoxLayout, QWidget
 
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
 from fancyfolders.threadsafefoldergeneration import FolderGeneratorWorker
@@ -199,8 +199,14 @@ class MainWindow(QMainWindow):
         self.setCursor(Qt.BusyCursor)
         # TODO: wait for folder generation if not complete yet
         #       i.e. if self.uuid_to_wait_for is not None
-        set_folder_icon(self.folder_icon, filepath)
-        self.unsetCursor()
+        try:
+            set_folder_icon(self.folder_icon, filepath)
+        except OSError as error:
+            logging.exception("Failed to set the folder icon")
+            QMessageBox.critical(self, "Could not set the folder icon",
+                                 str(error))
+        finally:
+            self.unsetCursor()
 
     def reset_icon(self):
         """Resets the current folder icon"""

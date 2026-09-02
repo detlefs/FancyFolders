@@ -79,6 +79,8 @@ def set_folder_icon(pil_image: Image, path: str) -> None:
 
     :param pil_image: PIL Image of the folder icon to set
     :param path: Absolute path to the folder
+    :raises OSError: If the image data cannot be read or macOS refuses to
+        write the icon (missing permissions, read-only volume, ...)
     """
     # Need to first save the image data to a bytes buffer in PNG format
     # for the PyObjC API method
@@ -86,7 +88,12 @@ def set_folder_icon(pil_image: Image, path: str) -> None:
     pil_image.save(buffered, format="PNG")
 
     ns_image = Cocoa.NSImage.alloc().initWithData_(buffered.getvalue())
-    Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(ns_image, path, 0)
+    if ns_image is None:
+        raise OSError("Could not read the generated folder icon image data")
+
+    if not Cocoa.NSWorkspace.sharedWorkspace().setIcon_forFile_options_(
+            ns_image, path, 0):
+        raise OSError("macOS refused to set the icon of '{}'".format(path))
 
 
 def generate_unique_folder_filename(directory: str) -> str:

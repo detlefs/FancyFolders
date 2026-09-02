@@ -7,6 +7,7 @@ from PIL import Image
 
 from fancyfolders.constants import FolderStyle, IconGenerationMethod
 from fancyfolders.imagetransformations import generate_folder_icon
+from fancyfolders.utilities import set_folder_icon
 
 
 def generate(style):
@@ -54,6 +55,16 @@ def main():
               "engraved icon should not contain the original colour")
     finally:
         os.chdir(cwd)
+
+    # Writing an icon must succeed on a real folder and fail loudly otherwise
+    folder = tempfile.mkdtemp()
+    set_folder_icon(red, folder)
+    check("Icon\r" in os.listdir(folder), "custom icon file was not written")
+    try:
+        set_folder_icon(red, os.path.join(folder, "does not exist"))
+        check(False, "setting the icon of a missing folder should raise")
+    except OSError:
+        pass
 
     print("ok")
 
