@@ -136,6 +136,11 @@ class MainWindow(QMainWindow):
         if self.generation_method is IconGenerationMethod.TEXT and not icon_text:
             self.generation_method = IconGenerationMethod.NONE
 
+        # The original colours only apply to a dragged image, keeping the
+        # checkbox active in the other modes offers a choice that does nothing
+        self.set_icon_panel.set_colour_mode_enabled(
+            self.generation_method is IconGenerationMethod.IMAGE)
+
         # Asynchronously generate new folder icon
         if generate_folder:
             # Keep track of unique ID for this task to only display latest one

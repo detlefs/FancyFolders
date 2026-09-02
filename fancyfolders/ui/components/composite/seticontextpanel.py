@@ -80,6 +80,15 @@ class SetIconTextPanel(InstructionPanel):
         self.icon_text_input.setText("")
         self.icon_text_input.blockSignals(False)
 
+    def set_colour_mode_enabled(self, enabled: bool) -> None:
+        """Enables the original colours checkbox, which only has an effect on
+        a dragged image. Its state is kept so that it applies again once an
+        image is dropped
+
+        :param enabled: Whether the checkbox can be used
+        """
+        self.original_colours_checkbox.setEnabled(enabled)
+
     def keep_original_image_colours(self) -> bool:
         return self.original_colours_checkbox.isChecked()
 

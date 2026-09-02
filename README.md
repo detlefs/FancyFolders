@@ -45,6 +45,11 @@ _**Note:** Please follow the first launch instructions in order to use the app. 
   rendering mode set in the SF Symbols app, including multicolour, and work
   with symbols of any SF Symbols version
 
+- An SF Symbol can also be dropped on the icon text field to combine it with
+  your own text. It is then drawn from the SF Pro fonts bundled with the app,
+  which are updated to the latest version before each release, so a very new
+  symbol may need a newer release to show up
+
 - Tick "Keep original image colours" to place an image on top of the folder
   instead of engraving it into it
 
