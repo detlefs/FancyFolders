@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
     # Asynchronous folder icon generation variables
     uuid_to_wait_for: Optional[UUID] = None
     folder_icon: Optional[Image] = None
+    save_when_ready: bool = False
     stop_all_previous_workers_signal = Signal()
 
     def __init__(self) -> None:
@@ -185,8 +186,22 @@ class MainWindow(QMainWindow):
             self.folder_icon = image
             self.centre_image.set_image(image, folder_style)
 
+            # A save was requested while this icon was still being generated
+            if self.save_when_ready:
+                self.save_when_ready = False
+                self._write_icon()
+
     def save_icon(self):
-        """Saves the current folder icon to the existing or new location"""
+        """Saves the current folder icon to the existing or new location, or
+        as soon as the icon currently being generated is ready"""
+        if self.uuid_to_wait_for is not None:
+            self.save_when_ready = True
+            self.setCursor(Qt.BusyCursor)
+            return
+        self._write_icon()
+
+    def _write_icon(self):
+        """Writes the current folder icon to the existing or new location"""
 
         # Get filepath of folder to change, or of new folder to generate
         make_new_folder, filepath = self.set_location_panel.get_output_info()
@@ -197,8 +212,6 @@ class MainWindow(QMainWindow):
         self.set_location_panel.set_existing_folder_filepath(None)
 
         self.setCursor(Qt.BusyCursor)
-        # TODO: wait for folder generation if not complete yet
-        #       i.e. if self.uuid_to_wait_for is not None
         try:
             set_folder_icon(self.folder_icon, filepath)
         except OSError as error:
