@@ -5,6 +5,12 @@
   <h1>Fancy Folders</h1>
 </div>
 
+> **Fork notice:** This is a modified version of
+> [kfreitag1/FancyFolders](https://github.com/kfreitag1/FancyFolders), maintained by
+> Detlef Schneider since August 2026. Changes include the Tahoe folder style, full icon-family
+> output, emoji and SVG symbol rendering, and arm64 builds. Like the original, it is released
+> under the GPL v3.
+
 **Fancy Folders** is a macOS application for creating customized folder icons from SF symbols, text, or images.
 
 - Drag and drop to set the icon and output folder
@@ -19,7 +25,7 @@
 
 ## Get started
 
-<h3><a href="https://github.com/kfreitag1/FancyFolders/releases/latest/download/FancyFolders.dmg">:floppy_disk: Download latest Fancy Folders release</a></h3>
+<h3><a href="https://github.com/detlefs/FancyFolders/releases/latest">:floppy_disk: Download latest Fancy Folders release</a></h3>
 
 _**Note:** Please follow the first launch instructions in order to use the app. This is needed for all apps produced by [unidentified developers](https://support.apple.com/en-ca/guide/mac-help/mh40616/mac), i.e. those without Apple developer accounts._
 
@@ -71,4 +77,6 @@ Fancy Folders is released under the [GPL v3 Licence](https://www.gnu.org/license
 
 ## Special thanks
 
-My lovely girlfriend Kelsey who had to put up with me while I made this :heart:
+Kieran Freitag, who wrote the original Fancy Folders this fork builds on.
+
+From the original readme: _"My lovely girlfriend Kelsey who had to put up with me while I made this"_ :heart:

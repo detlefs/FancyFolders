@@ -29,8 +29,9 @@ class AboutPanel(QDialog):
         self.version_string.setAlignment(Qt.AlignCenter)
         self.version_string.setMinimumWidth(200)
 
-        self.description = QLabel("Made by Kieran Freitag")
+        self.description = QLabel("Made by Kieran Freitag\nModified by Detlef Schneider")
         self.description.setStyleSheet("font-style: italic")
+        self.description.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
         layout.setSizeConstraint(QLayout.SetFixedSize)
