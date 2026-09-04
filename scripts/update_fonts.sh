@@ -5,7 +5,7 @@
 set -euo pipefail
 
 DMG_URL="https://devimages-cdn.apple.com/design/resources/download/SF-Pro.dmg"
-FONT_DIR="$(cd "$(dirname "$0")" && pwd)/assets/fonts"
+FONT_DIR="$(cd "$(dirname "$0")/.." && pwd)/assets/fonts"
 
 work="$(mktemp -d)"
 mount=""
