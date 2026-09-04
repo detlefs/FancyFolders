@@ -137,16 +137,16 @@ class FolderStyle(Enum):
 
 class TintColour(Enum):
     """Default colour palette for folder tints"""
-    red = (255, 154, 162)
-    melon = (255, 183, 178)
-    orange = (255, 218, 193)
-    yellow = (255, 236, 209)
-    green = (226, 240, 203)
-    teal = (181, 234, 215)
-    lightblue = (181, 228, 245)
-    purple = (199, 206, 234)
-    cream = (255, 250, 240)
-    white = (250, 249, 246)
+    red = (195, 118, 124)
+    melon = (195, 140, 136)
+    orange = (195, 167, 148)
+    yellow = (195, 181, 160)
+    green = (173, 184, 156)
+    teal = (139, 179, 165)
+    lightblue = (139, 175, 187)
+    purple = (152, 158, 179)
+    cream = (195, 192, 184)
+    white = (225, 224, 221)
 
 
 class SFFont(Enum):
