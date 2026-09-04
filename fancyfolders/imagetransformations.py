@@ -1,5 +1,6 @@
 import math
 from colorsys import hsv_to_rgb, rgb_to_hsv
+from functools import lru_cache
 from typing import Callable, Optional, cast
 
 from PIL import ImageFont, ImageDraw, ImageFilter, ImageChops, Image
@@ -15,7 +16,8 @@ from fancyfolders.utilities import (
 
 def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
                          generation_method: IconGenerationMethod = IconGenerationMethod.NONE,
-                         icon_scale=1.0, tint_colour: tuple[int, int, int] = None,
+                         icon_scale=1.0, icon_offset: tuple[float, float] = (0.0, 0.0),
+                         tint_colour: tuple[int, int, int] = None,
                          text: str = None, font_style=SFFont.heavy, image: Image.Image = None,
                          preserve_image_colours: bool = False,
                          keep_going: Callable[[], bool] = lambda: True) -> Image.Image:
@@ -31,6 +33,8 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     :param generation_method: Whether to generate the folder without any icon,
         with a text based icon, with a symbol icon, or with an image
     :param icon_scale:
+    :param icon_offset: Position of the icon on the folder as a percentage of
+        the folder size, offset from the center: x, y
     :param tint_colour:
     :param text: Text or symbol to use as the icon
     :param font_style:
@@ -51,15 +55,8 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
 
     # -------------------------------------------------------------------------
     # Get base folder image and its size
-    folder_image = Image.open(internal_resource_path(
-        "assets/" + folder_style.filename()))
+    folder_image = _base_folder_image(folder_style)
     size = folder_style.size()
-    exit_check()
-
-    # -------------------------------------------------------------------------
-    # Darken shadow to match default macOS folders
-    folder_image = _increased_shadow(
-        folder_image, factor=FOLDER_SHADOW_INCREASE_FACTOR)
     exit_check()
 
     # -------------------------------------------------------------------------
@@ -77,6 +74,10 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
         tuple(int(size * percent) for percent in bounding_box_percentages))
     new_bounding_box = scaled_box(
         bounding_box, icon_scale * ICON_BOX_SCALING_FACTOR, (size, size))
+
+    # The offset shifts where the icon is pasted, not the box it is fitted
+    # into, so that moving the icon around never changes its size
+    offset_pixels = (int(size * icon_offset[0]), int(size * icon_offset[1]))
     exit_check()
 
     # -------------------------------------------------------------------------
@@ -84,7 +85,7 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     if generation_method is IconGenerationMethod.IMAGE and preserve_image_colours:
         return _composite_original_colours(
             folder_image, image.convert("RGBA"), new_bounding_box,
-            folder_style, tint_colour)
+            offset_pixels, folder_style, tint_colour)
 
     # -------------------------------------------------------------------------
     # Emoji have no glyphs in the SF font and carry their own colours, so draw
@@ -95,7 +96,7 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
         if emoji_image is not None:
             return _composite_original_colours(
                 folder_image, emoji_image, new_bounding_box,
-                folder_style, tint_colour)
+                offset_pixels, folder_style, tint_colour)
 
     # -------------------------------------------------------------------------
     # Generate mask image based on icon generation method
@@ -109,7 +110,7 @@ def generate_folder_icon(folder_style: FolderStyle = FolderStyle.tahoe,
     # Fit the icon mask within the bounding box
     formatted_mask = Image.new("L", (size, size), "black")
     scaled_image, paste_box = _resize_image_in_box(
-        mask_image, new_bounding_box)
+        mask_image, new_bounding_box, offset_pixels)
     formatted_mask.paste(scaled_image, paste_box, scaled_image)
     exit_check()
 
@@ -187,7 +188,8 @@ EMOJI_FONT_SIZE = 160
 
 def _composite_original_colours(
         folder_image: Image.Image, image: Image.Image,
-        bounding_box: tuple[int, int, int, int], folder_style: FolderStyle,
+        bounding_box: tuple[int, int, int, int], offset: tuple[int, int],
+        folder_style: FolderStyle,
         tint_colour: Optional[tuple[int, int, int]]) -> Image.Image:
     """Pastes an image on top of the folder in its own colours, instead of
     engraving it into the folder
@@ -195,6 +197,7 @@ def _composite_original_colours(
     :param folder_image: PIL Image (RGBA) of the folder
     :param image: PIL Image (RGBA) to paste
     :param bounding_box: Box to fit the image into
+    :param offset: Pixels to shift the image by from the center of the box
     :param folder_style: The macOS folder style
     :param tint_colour: Tint colour to apply to the folder, or None
     :return: PIL Image (RGBA)
@@ -203,9 +206,13 @@ def _composite_original_colours(
         folder_image = adjusted_colours(
             folder_image, folder_style.base_colour(), tint_colour)
 
-    scaled_image, paste_box = _resize_image_in_box(image, bounding_box)
-    folder_image.alpha_composite(scaled_image, paste_box[0:2])
-    return folder_image
+    scaled_image, paste_box = _resize_image_in_box(image, bounding_box, offset)
+
+    # Paste onto a transparent layer first, alpha_composite cannot handle the
+    # negative coordinates an offset towards the top left produces
+    layer = Image.new("RGBA", folder_image.size, (0, 0, 0, 0))
+    layer.paste(scaled_image, paste_box[0:2])
+    return Image.alpha_composite(folder_image, layer)
 
 
 def _render_colour_emoji(text: str) -> Optional[Image.Image]:
@@ -330,6 +337,20 @@ def adjusted_colours(image: Image.Image, base_colour: tuple[int, int, int],
     return image.filter(ImageFilter.Color3DLUT.generate(4, adjust_pixel_colour, 3))
 
 
+@lru_cache(maxsize=len(FolderStyle))
+def _base_folder_image(folder_style: FolderStyle) -> Image.Image:
+    """Loads the folder image with its shadow darkened to match the default
+    macOS folders. Cached, since decoding the file takes as long as the rest
+    of the icon generation. Callers must not modify the image in place
+
+    :param folder_style: The macOS folder style
+    :return: PIL Image (RGBA) of the plain folder
+    """
+    folder_image = Image.open(internal_resource_path(
+        "assets/" + folder_style.filename()))
+    return _increased_shadow(folder_image, factor=FOLDER_SHADOW_INCREASE_FACTOR)
+
+
 def _increased_shadow(folder_image, factor) -> Image.Image:
     """Returns a new image with a more intense shadow by increasing the
     opacity of pixels with transparency.
@@ -368,13 +389,16 @@ def _normalized_image(image: Image.Image, steepness=0.18) -> Image.Image:
         return image
 
 
-def _resize_image_in_box(image: Image.Image, box: tuple[int, int, int, int]) \
+def _resize_image_in_box(image: Image.Image, box: tuple[int, int, int, int],
+                         offset: tuple[int, int] = (0, 0)) \
         -> tuple[Image.Image, tuple[int, int, int, int]]:
     """Returns the image, scaled into the bounding box with the same aspect
     ratio, from the center
 
     :param image: PIL Image
     :param box: Bounding box to insert image into: x1, y1, x2, y2
+    :param offset: Pixels to shift the scaled image by from the center of the
+        box, without changing its size: x, y
     :return: Scaled PIL image, New bounding box to insert into
     """
     top_point, bottom_point = box[0:2], box[2:4]
@@ -384,8 +408,8 @@ def _resize_image_in_box(image: Image.Image, box: tuple[int, int, int, int]) \
     scaled_image = image.resize((int(image.width * downscale_ratio),
                                  int(image.height * downscale_ratio)))
 
-    starting_x = top_point[0] + int((box_size[0] - scaled_image.size[0]) / 2)
-    starting_y = top_point[1] + int((box_size[1] - scaled_image.size[1]) / 2)
+    starting_x = top_point[0] + int((box_size[0] - scaled_image.size[0]) / 2) + offset[0]
+    starting_y = top_point[1] + int((box_size[1] - scaled_image.size[1]) / 2) + offset[1]
 
     new_bounding_box = (starting_x, starting_y,
                         starting_x + scaled_image.size[0],

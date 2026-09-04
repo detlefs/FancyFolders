@@ -2,7 +2,7 @@ from typing import Optional
 
 from PIL.Image import Image
 from PIL.ImageQt import ImageQt
-from PySide6.QtCore import QPoint, QRect, QSize, Qt
+from PySide6.QtCore import QPoint, QRect, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QPaintEvent, QPainter, QPixmap
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QSizePolicy, QWidget
 
@@ -16,6 +16,9 @@ class CentreFolderIconContainer(QWidget):
     MINIMUM_SIZE = (400, 240)
     SPINNER_PADDING = 15
     SPINNER_COLOUR = (200, 200, 200)
+    # Generating an icon usually takes a few tens of milliseconds, only show
+    # the spinner if it takes noticeably longer than that
+    SPINNER_DELAY_MS = 250
 
     def __init__(self) -> None:
         super().__init__()
@@ -49,12 +52,19 @@ class CentreFolderIconContainer(QWidget):
 
         self.setLayout(self.container)
 
+        self.spinner_timer = QTimer(self)
+        self.spinner_timer.setSingleShot(True)
+        self.spinner_timer.timeout.connect(self.spinner.start)
+
     def set_loading(self):
-        """Starts the spinner to indicate waiting for folder generation"""
-        self.spinner.start()
+        """Starts the spinner to indicate waiting for folder generation,
+        unless the icon arrives before the spinner delay is up"""
+        if not self.spinner.is_spinning():
+            self.spinner_timer.start(self.SPINNER_DELAY_MS)
 
     def set_image(self, image: Image, folder_style: FolderStyle):
         """Sets the folder icon after validating that it is the latest one"""
+        self.spinner_timer.stop()
         self.spinner.stop()
         self.folder_icon.set_folder_image(image, folder_style)
 

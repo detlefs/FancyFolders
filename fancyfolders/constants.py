@@ -19,6 +19,16 @@ ICON_SCALE_SLIDER_MAX = 31
 MAXIMUM_ICON_SCALE_VALUE = 2.0
 MINIMUM_ICON_SCALE_VALUE = 0.1
 
+ICON_OFFSET_SLIDER_MAX = 31
+# Percentage of the folder size the icon can be shifted by: x, y. Further than
+# this the icon leaves the body of the folder and the engraving looks wrong.
+# The icon box is much wider than it is high, so there is more room sideways
+MAXIMUM_ICON_OFFSET_VALUE = (0.27, 0.15)
+# The offset range is divided by the icon scale, since a small icon has more
+# room to move. This caps it at the half size of the icon box (~0.87 wide and
+# ~0.49 high), beyond which even a tiny icon leaves the box
+MAXIMUM_ICON_OFFSET_LIMIT = (0.39, 0.22)
+
 # ICON GENERATION
 
 FOLDER_SHADOW_INCREASE_FACTOR = 1.7

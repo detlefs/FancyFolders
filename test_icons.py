@@ -12,10 +12,10 @@ from fancyfolders.utilities import (
     is_symbol_character, render_svg, set_folder_icon)
 
 
-def generate(style):
+def generate(style, offset=(0.0, 0.0)):
     return generate_folder_icon(
         folder_style=style, generation_method=IconGenerationMethod.TEXT,
-        text="A", icon_scale=1.0)
+        text="A", icon_scale=1.0, icon_offset=offset)
 
 
 def check(condition, message):
@@ -55,6 +55,29 @@ def main():
             generation_method=IconGenerationMethod.IMAGE, image=red)
         check(engraved.getpixel(centre) != (255, 0, 0, 255),
               "engraved icon should not contain the original colour")
+
+        # The offset moves the icon without changing its size, and the
+        # centered default must render exactly as before
+        for style in FolderStyle:
+            check(generate(style).tobytes() == baseline[style].tobytes(),
+                  f"no offset should not change the icon: {style}")
+            check(generate(style, (0.1, -0.1)).tobytes() != baseline[style].tobytes(),
+                  f"offset ignored: {style}")
+
+        def count_red(image):
+            return sum(1 for c in image.get_flattened_data() if c == (255, 0, 0, 255))
+
+        moved = generate_folder_icon(
+            folder_style=FolderStyle.tahoe,
+            generation_method=IconGenerationMethod.IMAGE, image=red,
+            preserve_image_colours=True, icon_offset=(-0.2, -0.2))
+        edge = (centre[0] + 204, centre[1] + 204)  # inside the icon when centered
+        check(kept.getpixel(edge) == (255, 0, 0, 255), "wrong reference point")
+        check(moved.getpixel(edge) != (255, 0, 0, 255),
+              "icon did not move away from the center")
+        check(moved.getpixel((centre[0] - 204, centre[1] - 204)) == (255, 0, 0, 255),
+              "icon did not move to the offset position")
+        check(count_red(moved) == count_red(kept), "offset changed the icon size")
         # Emoji keep their own colours, plain text is still engraved
         check(_render_colour_emoji("A") is None, "a letter is not an emoji")
         check(_render_colour_emoji("\U0001f419") is not None, "emoji not rendered")

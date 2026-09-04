@@ -5,7 +5,7 @@ from uuid import UUID
 from typing import Optional
 
 from PIL.Image import Image, fromqimage, open
-from PySide6.QtCore import QThreadPool, Signal
+from PySide6.QtCore import QThreadPool
 from PySide6.QtGui import QAction, QDropEvent, QMouseEvent, Qt
 from PySide6.QtWidgets import QApplication, QLineEdit, QMainWindow, QMenuBar, QMessageBox, QVBoxLayout, QWidget
 
@@ -14,6 +14,7 @@ from fancyfolders.threadsafefoldergeneration import FolderGeneratorWorker
 from fancyfolders.ui.components.centrefoldericon import CentreFolderIconContainer
 from fancyfolders.ui.components.composite.colourpalette import ColourPalette
 from fancyfolders.ui.components.composite.folderstyledropdown import FolderStyleDropdown
+from fancyfolders.ui.components.composite.positionsliders import PositionSliders
 from fancyfolders.ui.components.composite.saveiconpanel import SaveIconPanel
 from fancyfolders.ui.components.composite.scalethicknesssliders import ScaleThicknessSliders
 from fancyfolders.ui.components.composite.seticontextpanel import SetIconTextPanel
@@ -39,13 +40,15 @@ class MainWindow(QMainWindow):
     uuid_to_wait_for: Optional[UUID] = None
     folder_icon: Optional[Image] = None
     save_when_ready: bool = False
-    stop_all_previous_workers_signal = Signal()
+    current_worker: Optional[FolderGeneratorWorker] = None
 
     def __init__(self) -> None:
         super().__init__()
 
-        # Common thread pool to run folder generation in
+        # Common thread pool to run folder generation in. One at a time, a
+        # cancelled task exits quickly and parallel ones only fight for CPU
         self.thread_pool = QThreadPool(self)
+        self.thread_pool.setMaxThreadCount(1)
 
         main_layout = QVBoxLayout()
         main_layout.setSpacing(5)
@@ -59,14 +62,16 @@ class MainWindow(QMainWindow):
         self.centre_image = CentreFolderIconContainer()
         self.centre_image.dragEnterEvent = lambda e: e.acceptProposedAction()
         self.centre_image.dropEvent = self.unified_drop
-        main_layout.addWidget(self.centre_image)
+        self.position_sliders = PositionSliders(
+            self.centre_image, lambda: self.update_folder_generation_variables(True))
+        main_layout.addLayout(self.position_sliders)
 
         # Folder icon colour palette
         self.colour_palette = ColourPalette(
             lambda: self.update_folder_generation_variables(True))
         main_layout.addLayout(self.colour_palette)
 
-        # Icon scale and font weight slider container
+        # Icon scale, font weight and position slider container
         self.scale_thickness_sliders = ScaleThicknessSliders(
             lambda: self.update_folder_generation_variables(True))
         main_layout.addLayout(self.scale_thickness_sliders)
@@ -129,6 +134,7 @@ class MainWindow(QMainWindow):
         tint_colour = self.colour_palette.get_colour()
         icon_scale = self.scale_thickness_sliders.get_scale()
         icon_thickness = self.scale_thickness_sliders.get_thickness()
+        icon_offset = self.position_sliders.get_offset(icon_scale)
         icon_text = self.set_icon_panel.get_icon_text()
         keep_original_colours = self.set_icon_panel.keep_original_image_colours()
 
@@ -151,8 +157,8 @@ class MainWindow(QMainWindow):
             worker = FolderGeneratorWorker(
                 task_uuid, folder_style=folder_style,
                 generation_method=self.generation_method, icon_scale=icon_scale,
-                tint_colour=tint_colour, text=icon_text, font_style=icon_thickness,
-                image=self.icon_image,
+                icon_offset=icon_offset, tint_colour=tint_colour,
+                text=icon_text, font_style=icon_thickness, image=self.icon_image,
                 preserve_image_colours=keep_original_colours)
 
             # Connect completion callback to the centreImage object, and set it to
@@ -160,9 +166,10 @@ class MainWindow(QMainWindow):
             worker.signals.completed.connect(self.receive_folder_generation_data)
             self.set_ready_to_receive_folder_generation_data(task_uuid)
 
-            # Stop all other folder generation tasks and make this one stop too in the future
-            self.stop_all_previous_workers_signal.emit()
-            self.stop_all_previous_workers_signal.connect(worker.stop)
+            # Stop the previous folder generation task, it is out of date
+            if self.current_worker is not None:
+                self.current_worker.stop()
+            self.current_worker = worker
 
             # Start task
             self.thread_pool.start(worker)
@@ -233,6 +240,7 @@ class MainWindow(QMainWindow):
         self.folder_style_dropdown.reset()
         self.colour_palette.reset()
         self.scale_thickness_sliders.reset()
+        self.position_sliders.reset()
         self.set_icon_panel.reset()
         self.update_folder_generation_variables(
             True, IconGenerationMethod.NONE)
