@@ -19,7 +19,7 @@
 **Fancy Folders** is a macOS application for creating customized folder icons from SF symbols, text, or images.
 
 - Drag and drop to set the icon and output folder
-- Customize the icon scale, thickness, and colour
+- Customize the icon scale, thickness, position, and colour
 - Save the icon!
 
 <div align="center">
@@ -61,6 +61,9 @@ symbol may need a newer release to show up
 instead of engraving it into it
 - Drag to set the output folder
 - Choose the folder style to match your macOS version: Tahoe *(default)*, Big Sur in light or dark mode, or Catalina. Note: Catalina and Tahoe icons are in fact the same. Separated here only for ease of use
+- Move the icon around with the sliders next to the preview: horizontal below
+it, vertical to its right. A smaller icon may be moved further, so it can be
+placed anywhere on the folder
 - Choose a folder tint colour from the list or select a custom colour
 - Click "Save Icon" to save the folder to the output folder, or to make a new folder with the icon in the chosen directory
   - Icons are written in every macOS icon size, so they stay as sharp as possible down to the  
